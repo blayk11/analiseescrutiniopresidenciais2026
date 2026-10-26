@@ -103,13 +103,24 @@
         : d.esfera === 'ESTADO'
           ? d.macrorregiao
           : d.esfera === 'EXTERIOR' ? 'Fora do Brasil' : 'Brasil';
+
+    const tagHist = d.perfil_historico
+      ? `<span class="badge neutro" style="font-size:9.5px;padding:1px 6px">${esc(d.perfil_historico)}</span>`
+      : '';
+    const swing2226 = (d.swing_22_26 !== null && d.swing_22_26 !== undefined)
+      ? `<span class="hist-swing" title="Swing 2022→2026 (PT/Lula)" style="color:var(--fraco);font-size:11px">sw 22→26: <b>${pp(d.swing_22_26)}</b></span>`
+      : '';
+
     return `
       <div class="card-topo">
         <div>
           <div class="card-nome">${esc(d.nome_localidade)}</div>
           <div class="card-meta">${esc(local)}${d.eleitores_aptos_2t ? ' · ' + num(d.eleitores_aptos_2t) + ' eleitores' : ''}</div>
         </div>
-        <span class="badge ${virada ? 'virada' : 'sem-virada'}">${virada ? 'VIRADA' : 'SEM VIRADA'}</span>
+        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+          ${tagHist}
+          <span class="badge ${virada ? 'virada' : 'sem-virada'}">${virada ? 'VIRADA' : 'SEM VIRADA'}</span>
+        </div>
       </div>
       <div class="barra-votos" role="img" aria-label="Lula ${pct(d.pct_lula_2t)}, Flávio ${pct(d.pct_flavio_2t)}">
         ${segmentos(d)}
@@ -117,6 +128,7 @@
       <div class="card-nums">
         <span class="lula">Lula ${pct(d.pct_lula_2t)}</span>
         <span class="flavio">Flávio ${pct(d.pct_flavio_2t)}</span>
+        ${swing2226}
         <span class="abst">abst. ${pct(d.pct_abstencao_2t)}</span>
         <span class="chev">›</span>
       </div>`;
@@ -210,11 +222,22 @@
       <span class="badge ${virada ? 'virada' : 'sem-virada'}">${virada ? 'VIROU NO 2º TURNO' : 'NÃO VIROU'}</span>
       <span class="badge neutro">margem ${num(d.saldo_virada)}</span>
       <div class="barra-votos" style="margin-top:10px">${segmentos(d)}</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px">
+        ${d.perfil_historico
+          ? `<span class="badge ok" style="font-size:11px">Histórico: <b>${esc(d.perfil_historico)}</b></span>
+             <span class="badge neutro" style="font-size:11px">Swing 18→22: <b>${pp(d.swing_18_22)}</b></span>
+             <span class="badge neutro" style="font-size:11px">Swing 22→26: <b>${pp(d.swing_22_26)}</b></span>`
+          : (d.pct_pt_2018 !== undefined && d.pct_pt_2018 !== null
+            ? `<span class="badge neutro" style="font-size:11px">2018: PT ${pct(d.pct_pt_2018)} × Polo B ${pct(d.pct_polo_b_2018)}</span>
+               <span class="badge neutro" style="font-size:11px">2022: PT ${pct(d.pct_pt_2022)} × Polo B ${pct(d.pct_polo_b_2022)}</span>
+               <span class="badge neutro" style="font-size:11px">Swing 22→26: <b>${pp(d.swing_22_26)}</b></span>`
+            : '')}
+      </div>
       <div class="hero-grid">
         ${kpis.map(([k, v]) => `<div><b>${v}</b><span>${k}</span></div>`).join('')}
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
-        <button class="migalha" type="button" data-parecer="1">Ver parecer estatístico</button>
+        <button class="migalha" type="button" data-parecer="1" style="font-weight:600">📊 Ver parecer estatístico & histórico 2018/2022</button>
         ${d.esfera === 'ESTADO'
           ? `<button class="migalha" type="button" data-municipios="1">${modoMunicipios
               ? 'Ver regiões geográficas'
