@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#10151c">
+<title>Escrutínio 2026 — drill-down</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topo">
+  <div class="barra">
+    <button id="voltar" class="icone" type="button" aria-label="Voltar um nível" disabled>←</button>
+    <h1>Escrutínio 2026</h1>
+    <button id="limpar" class="icone" type="button" aria-label="Ir para o Brasil">⤒</button>
+  </div>
+  <nav id="migalhas" class="migalhas" aria-label="Nível de navegação"></nav>
+  <div class="busca-linha">
+    <input id="busca" type="search" inputmode="search" autocomplete="off"
+           placeholder="Buscar município, UF ou região">
+    <span id="contagem" class="contagem"></span>
+  </div>
+</header>
+
+<main id="painel" class="painel">
+  <div id="hero" class="hero"></div>
+  <div id="trilho" class="trilho"></div>
+  <p class="rodape">
+    Fonte: TSE (resultados 2026, dados abertos 2018/2022) e malha do IBGE.
+    Números calculados por <code>estatistica.py</code>; nenhum valor é editado à mão.
+  </p>
+</main>
+
+<div id="fundo" class="fundo" hidden></div>
+<section id="sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-titulo" hidden>
+  <div class="sheet-alca"></div>
+  <div class="sheet-cabecalho">
+    <div>
+      <p id="sheet-nivel" class="sheet-nivel"></p>
+      <h2 id="sheet-titulo"></h2>
+    </div>
+    <button id="fechar" class="icone" type="button" aria-label="Fechar">✕</button>
+  </div>
+  <div id="sheet-corpo" class="sheet-corpo"></div>
+</section>
+
+<script src="dados.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

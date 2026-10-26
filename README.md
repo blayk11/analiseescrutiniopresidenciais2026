@@ -1,198 +1,185 @@
-# Análise de escrutínio — Presidente 2026 (1º → 2º turno)
+# Escrutínio presidencial 2026 — dados, estatística e app mobile
 
-Extração e análise **determinística** da votação para Presidente nas Eleições 2026, município
-por município, a partir dos JSON públicos de `resultados.tse.jus.br`, mais uma **base
-hierárquica** (Brasil → macrorregião → UF → região intermediária → município) pronta para
-roll-up e drill-down. Nenhum número é digitado à mão: tudo sai dos scripts sobre os dados
-oficiais do TSE.
+Extração, análise e visualização da votação para Presidente em 2026 (1º e 2º turno), com
+camada histórica de 2018 e 2022, motor de validação estatística e um app **mobile-first** com
+drill-down hierárquico. Todos os números saem de scripts sobre dados oficiais — nada é digitado
+à mão.
 
 Segundo turno: **LULA (PT, 13) × FLÁVIO BOLSONARO (PL, 22)**, apuração encerrada em 25/10/2026.
 
-## Achados principais
+## App
 
-Relatório completo das três perguntas de pesquisa: **[ANALISE.md](ANALISE.md)**.
+```bash
+# abrir direto, sem servidor
+start site/index.html        # Windows
+# ou servir (necessário só se quiser testar em celular na mesma rede)
+python -m http.server 8000 --directory site
+```
+
+- Abre no **BRASIL** e desce: macrorregião → estado → região intermediária → município.
+- **Migalhas** no topo e botão voltar; busca global por município, UF ou região.
+- Em cada estado, atalho **"Ver todos os N municípios"** (sem passar pelas regiões).
+- Card com barra empilhada (Lula / Flávio / brancos / nulos), badge de virada e abstenção.
+- **"Ver parecer estatístico"** abre um bottom sheet com z-score, swings, decomposição do
+  ganho e histórico 2018/2022/2026.
+- Lista **virtualizada**: só os cards visíveis existem no DOM (em SP, 9 nós para 645 cidades).
+
+## Achados
 
 | | |
 |---|---|
-| Placar nacional (com exterior) | Lula 53.879.538 → **64.256.232** (+10.376.694); Flávio 56.104.503 → **59.826.041** (+3.721.538) |
+| Placar nacional | Lula 53.879.538 → **64.256.232** (+10.376.694); Flávio 56.104.503 → **59.826.041** (+3.721.538) |
 | Divisão do crescimento | **73,7%** dos votos novos nos dois candidatos foram para Lula |
 | Viradas municipais | **212** de 5.571 (3,8%): 211 Flávio→Lula e **1** Lula→Flávio (Uirapuru/GO) |
-| Maior virada | Rio de Janeiro/RJ — 4,95 mi de eleitores, era de Flávio no 1º turno por 137.837 votos |
-| Região que virou | **Norte**: Flávio ganhava por 458.835 no 1º turno e perdeu por **1.079 votos** no 2º |
+| Região que virou | **Norte**: Flávio ganhava por 458.835 e perdeu por **1.079 votos** |
 | Origem do ganho de Lula | 54,5% do saldo veio de municípios onde ele **perdeu** o 1º turno |
 | Absorção dos terceiros | r = **−0,18** entre peso dos terceiros no 1º turno e captura por Lula |
+| Histórico | 2.170 municípios consistentes Polo A, 1.598 Polo B, 927 pêndulos, 875 inclinados |
+| Estatística | 4.866 padrão esperado, 637 variação notável, **68 outliers** (|z| > 2,5) |
 
-O ponto metodológico central: o crescimento combinado dos dois candidatos (14,0 mi) é
-**1,51× maior** que o pool de votos dados a terceiros no 1º turno (9,3 mi). Logo, o delta não
-se explica por migração de voto de terceiros — boa parte vem de mudança de comparecimento e de
-brancos/nulos.
+Relatório das três perguntas de pesquisa: **[ANALISE.md](ANALISE.md)**.
 
-## Base hierárquica (roll-up / drill-down)
+## Pipeline
 
-`agregar_esferas.py` gera **uma tabela só**, com as mesmas colunas em todos os níveis. Cada
-linha traz os absolutos somados das filhas e os percentuais recalculados sobre o denominador
-correto daquele nível (nunca média de percentuais).
-
-| Nível | Esfera | Linhas |
-|---|---|---|
-| 0 | `PAIS` | 1 |
-| 1 | `MACRORREGIAO` (Norte, Nordeste, Sudeste, Sul, Centro-Oeste) | 5 |
-| 2 | `ESTADO` | 27 |
-| 3 | `REGIAO_INTERMEDIARIA` (IBGE) | 133 |
-| 4 | `MUNICIPIO` | 5.571 |
-| — | `EXTERIOR` (todos os postos no exterior em uma linha) | 1 |
-| | **total** | **5.738** |
-
-O `EXTERIOR` fica fora da malha do IBGE (não tem UF nem região), mas entra na soma do Brasil —
-assim o nível `PAIS` bate exatamente com o total oficial do TSE.
-
-Saídas:
-
-- `saidas/base_hierarquica.csv` — 5.738 linhas × 47 colunas (UTF-8 com BOM)
-- `dados/base_hierarquica.db` — tabela `esferas`, com índices por esfera e UF
-- `visualizacao/dados.js` — mesmo conteúdo em JSON, para o viewer
-
-### Ver no navegador
-
-Abra **`visualizacao/index.html`** direto no navegador (funciona por `file://`, sem servidor).
-Abre no Brasil; clique na seta para descer até o município. Tem busca por município, UF ou
-região, e botões de expandir/recolher tudo. A tabela monta no DOM **só o que está aberto** —
-expandir tudo são 5.738 linhas, e mesmo assim rola liso.
-
-### Colunas da base
-
-| Grupo | Colunas |
-|---|---|
-| Localização | `esfera`, `cod_ibge`, `nome_localidade`, `uf`, `macrorregiao`, `regiao_intermediaria`, `cod_regiao_intermediaria` |
-| Engajamento | `eleitores_aptos_1t/2t`, `comparecimento_1t/2t`, `pct_comparecimento_1t/2t`, `pct_abstencao_1t/2t` |
-| Inválidos | `brancos_1t/2t`, `nulos_1t/2t` e os `pct_*` sobre o comparecimento |
-| Nominais | `lula_1t/2t`, `flavio_1t/2t` e os `pct_*` sobre os válidos |
-| Terceiros | `outros_1t`, `cury_1t`, `renan_1t`, `caiado_1t` e os `pct_*` |
-| Peso | `pct_no_estado` (município e região intermediária), `pct_no_brasil` |
-| Virada | `vencedor_1t`, `vencedor_2t`, `houve_virada` (SIM/NÃO), `saldo_virada` (margem do 2º turno em votos) |
-
-Exemplo de consulta:
-
-```sql
--- % de Lula por macrorregião e o peso de cada uma
-SELECT nome_localidade, pct_lula_2t AS pct_lula, pct_no_brasil AS peso,
-       houve_virada, saldo_virada
-FROM esferas WHERE esfera = 'MACRORREGIAO' ORDER BY validos_2t DESC;
-```
-
-## Como reproduzir
-
-Só precisa de Python 3.10+ e da stdlib. Sem pandas, sem pip install.
+Python 3.10+ e stdlib apenas. Sem pandas, sem `pip install`.
 
 ```bash
-python extrair_presidente.py    # baixa 11.514 JSON do TSE (~8 min, fica em cache/)
-python agregar_esferas.py       # monta a base hierárquica (malha do IBGE)
-python analise.py               # gera ANALISE.md e saidas/*.csv
-python verificar.py             # checagem de integridade (sai 1 se algo divergir)
-```
-
-Variações úteis:
-
-```bash
-python extrair_presidente.py --ufs ac,sp   # só alguns estados
-python extrair_presidente.py --turnos 2    # só o 2º turno
-python extrair_presidente.py --force       # rebaixa ignorando o cache
-node testes/teste_viewer.mjs               # testa o drill-down (DOM mínimo, sem dependências)
+python extrair_presidente.py    # 2026: 11.514 JSON do TSE -> CSV + SQLite (~8 min)
+python historico.py             # 2018/2022: ZIP de dados abertos -> SQLite (~30 s)
+python agregar_esferas.py       # roll-up município -> RI -> UF -> macrorregião -> Brasil
+python estatistica.py           # histórico + swing + z-score -> base final e site/dados.js
+python analise.py               # ANALISE.md (três perguntas)
+python verificar.py             # integridade de ponta a ponta (sai 1 se algo divergir)
+node testes/teste_site.mjs      # 24 asserções do app (DOM mínimo, sem dependências)
 ```
 
 ## Estrutura
 
 ```
-extrair_presidente.py    JSON do TSE -> CSV + SQLite por município e turno
-agregar_esferas.py       roll-up município -> região intermediária -> UF -> macrorregião -> Brasil
-analise.py               três perguntas de pesquisa -> ANALISE.md
-verificar.py             reconciliação e integridade -> código de saída
-ANALISE.md               relatório gerado (não editar à mão: é sobrescrito)
-saidas/
-  base_hierarquica.csv                 5.738 linhas, todos os níveis
-  consolidado_municipios_t1_t2.csv     5.571 municípios, T1 x T2
-  cidades_com_virada.csv               212 municípios que viraram
-  uf_delta.csv                         deltas por UF
-visualizacao/
-  index.html, app.js, style.css        drill-down (abre por file://)
-  dados.js                             payload gerado por agregar_esferas.py
-testes/teste_viewer.mjs                teste do drill-down
-cache/                                 JSON bruto do TSE + malha do IBGE (gitignored)
-dados/                                 CSV/SQLite gerados (gitignored)
+extrair_presidente.py   JSON do TSE 2026 -> votação nominal por município
+historico.py            2018/2022 -> votos PT vs polo B por município
+agregar_esferas.py      roll-up hierárquico (5 esferas + exterior)
+estatistica.py          histórico, swing, perfil, z-score, decomposição, payload do site
+analise.py              ANALISE.md
+verificar.py            reconciliação e integridade
+ANALISE.md              relatório das três perguntas
+site/                   app mobile (index.html, app.js, style.css, dados.js)
+saidas/                 base_hierarquica.csv, base_completa.csv, histórico, viradas, UF
+testes/teste_site.mjs   teste do app em Node
+cache/                  JSON do TSE + ZIPs do IBGE/TSE (gitignored)
+dados/                  SQLite/CSV gerados (gitignored)
 ```
 
-## Dicionário de dados (votação por município)
+## Base hierárquica
 
-`dados/votos_presidente_2026.csv` (80.598 linhas, UTF-8 com BOM) e a tabela `votos` no SQLite:
+| Nível | Esfera | Linhas |
+|---|---|---|
+| 0 | `PAIS` | 1 |
+| 1 | `MACRORREGIAO` | 5 |
+| 2 | `ESTADO` | 27 |
+| 3 | `REGIAO_INTERMEDIARIA` (IBGE) | 133 |
+| 4 | `MUNICIPIO` | 5.571 |
+| — | `EXTERIOR` | 1 |
+| | **total** | **5.738** |
 
-| Coluna | Conteúdo |
+Cada linha traz os absolutos somados das filhas e os percentuais **recalculados sobre o
+denominador do próprio nível** — nunca média de percentuais. `PAIS` inclui o exterior e bate
+exatamente com o total oficial do TSE (124.082.273 válidos no 2º turno).
+
+## Camada histórica
+
+Fonte (Portal de Dados Abertos do TSE, dataset `resultados-2018` e `resultados-2022`):
+
+```
+https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_partido_munzona/votacao_partido_munzona_2018.zip
+https://cdn.tse.jus.br/estatistica/sead/odsele/votacao_partido_munzona/votacao_partido_munzona_2022.zip
+```
+
+Usa o arquivo de **partido** (28 MB / 26 MB) em vez do de candidato (395 MB / 643 MB): o voto
+nominal é atribuído ao partido do candidato, e basta para comparar os dois polos.
+
+- **Polo A** = PT (13). **Polo B** = PSL (17) em 2018 e PL (22) em 2022 — o partido de Bolsonaro
+  nas duas eleições; nos dois anos o 2º turno foi PT × esse partido.
+- O ZIP tem 29 CSVs: 27 UFs (sem Presidente), `_BR.csv` (país inteiro) e `_BRASIL.csv`
+  (cópia idêntica do `_BR`). O script lê **só o `_BR.csv`** — somar os dois duplicaria os votos.
+- Conferência: os totais de 2022 batem exatamente com o oficial (PT 57.259.504 / PL 51.072.345
+  no 1º turno). Em 2018 há **+46 votos** para o PT em relação ao total publicado, resíduo de
+  voto em trânsito — 0,0001%, registrado aqui por transparência.
+- `CD_MUNICIPIO` vem com 5 dígitos em 2018 e sem zero à esquerda em 2022; o script normaliza.
+- O município criado depois de 2022 (**Boa Esperança do Norte/MT**) aparece como
+  "Sem histórico completo" — 1 caso, tratado explicitamente.
+
+## Motor estatístico
+
+Tudo determinístico, sem modelo probabilístico e sem juízo político:
+
+| Métrica | Definição |
 |---|---|
-| `turno` | 1 ou 2 |
-| `uf` | sigla da UF; `zz` = voto no exterior |
-| `cd_municipio` | código TSE de 5 dígitos (**não** é o código IBGE) |
-| `cd_ibge`, `municipio` | código IBGE e nome |
-| `cargo`, `cd_cargo` | "Presidente", 1 |
-| `nr_candidato`, `sq_candidato`, `nome_candidato`, `nome_urna` | identificação do candidato |
-| `partido`, `coligacao` | sigla do partido; coligação (vazio se concorreu isolado) |
-| `votos` | votos nominais no município |
-| `pct_municipio` | % dentro do município (não do estado nem do país) |
-| `status`, `eleito` | `Eleito` / `2º turno` / `Não eleito`; flag S/N derivada de `status` |
-| `secoes_total`, `secoes_apuradas`, `pct_secoes` | progresso da apuração |
-| `eleitorado`, `eleitorado_apurado` | eleitorado apto e apurado |
-| `votos_total`, `votos_validos`, `votos_brancos`, `votos_nulos` | comparecimento e composição |
-| `apuracao_encerrada`, `gerado_em` | `and` do TSE e data/hora de geração |
+| `delta_pp` | pct Lula 2ºT − pct Lula 1ºT (pontos percentuais sobre válidos) |
+| `swing_18_22` | pct PT 2022 1ºT − pct PT 2018 1ºT |
+| `swing_22_26` | pct Lula 2026 1ºT − pct PT 2022 1ºT |
+| `z_delta_ri` | (delta − média da **região intermediária**) / desvio padrão amostral da região |
+| `z_delta_br` | mesmo cálculo contra todos os municípios (fallback p/ DF e regiões com n < 5) |
+| `classificacao_z` | \|z\| ≤ 1,5 **Padrão esperado** · ≤ 2,5 **Variação notável** · > 2,5 **Outlier estatístico** |
 
-## Armadilhas que o código já trata
+**Perfil histórico** (3 ciclos, margem > 10 p.p. como corte):
+`Consistente Polo A/B` (venceu os 3 com margem > 10) · `Inclinado Polo A/B` (venceu os 3, mas
+com alguma margem ≤ 10) · `Pêndulo` (alternou o polo vencedor) · `Sem histórico completo`.
 
-1. **`eleito` vem de `status`, não do campo `e`.** No JSON do TSE, `e = "s"` significa "não
-   eliminado" — quem vai a 2º turno também vem com `"s"`. Usar `e` marcaria dois candidatos
-   como eleitos no 1º turno.
-2. **`pct_municipio` chega como string com vírgula** (`"66,57"`). `float()` direto devolve
-   `NaN` sem erro; o extrator converte certo.
-3. **`uf = 'zz'` é voto no exterior** (186 postos). `ANALISE.md` compara municípios e por isso
-   exclui o exterior; a base hierárquica inclui o exterior como linha própria, para o Brasil
-   fechar com o TSE.
-4. **Não existe arquivo "Brasil por município"** para Presidente — o total nacional é a soma
-   dos municípios. Os arquivos de UF são agregados.
-5. **Região intermediária não vem do TSE.** O merge é pelo `cod_ibge` (7 dígitos) com a malha
-   do IBGE; município novo que não exista lá aparece no aviso do script e fica fora da base.
+**Decomposição do ganho do vencedor** — identidade contábil exata, sem hipótese:
+
+```
+ΔW = ΔV − P − ΔL
+  ΔV = variação dos votos válidos totais
+  P  = votos de terceiros no 1º turno (deixam de existir no 2º)
+  ΔL = variação do adversário (negativa => transferiu)
+```
+
+O fator dominante é o maior termo dessa soma. No Brasil, o motor dominante é o **crescimento do
+colégio válido** (+4,7 mi), seguido da migração de terceiros (−9,3 mi) e da perda do adversário.
+A decomposição mostra que o pool de terceiros sozinho não explica o delta: ele é 1,51× menor.
+
+## Fontes (todas rastreáveis no código)
+
+| Uso | URL |
+|---|---|
+| Catálogo de eleições 2026 | `resultados.tse.jus.br/oficial/comum/config/ele-c.json` |
+| Municípios de 2026 | `resultados.tse.jus.br/oficial/ele2026/6257/config/mun-e006257-cm.json` |
+| Votação nominal 2026 | `resultados.tse.jus.br/oficial/ele2026/{6257|6258}/dados/{uf}/{uf}{cd}-c0001-e00{6257|6258}-u.json` |
+| Votação por partido 2018/2022 | `cdn.tse.jus.br/estatistica/sead/odsele/votacao_partido_munzona/votacao_partido_munzona_{ano}.zip` |
+| Malha de regiões | `servicodados.ibge.gov.br/api/v1/localidades/estados/{id}/municipios` |
+
+Códigos de eleição: **6257** = Presidente 1º turno, **6258** = 2º turno.
 
 ## Validação
 
-`python verificar.py` cobre:
+`python verificar.py` (tudo roda hoje sem falha):
 
-- 5.757 unidades no TSE (5.571 municípios + 186 exterior), sem duplicata e sem voto nulo de dado.
-- Contagem por esfera (1 / 5 / 27 / 133 / 5.571 / 1).
-- **Reconciliação**: município + exterior = Brasil em todas as 15 colunas absolutas; UF = região
-  intermediária = macrorregião, e (+exterior) = Brasil, nos dois turnos.
-- `pct_no_estado` somando 100% em cada UF; `pct_no_brasil` das UFs + exterior = 100%.
-- Todo município com macrorregião e região intermediária preenchidas.
-- 212 municípios com virada.
+- 5.757 unidades no TSE, sem duplicata e sem voto nulo de dado.
+- Contagem por esfera (1 / 5 / 27 / 133 / 5.571 / 1) e toda linha com pai.
+- **Reconciliação**: município + exterior = Brasil em 15 colunas de 2026 e 12 de histórico.
+- 2022 oficial × extraído, turno a turno, PT e PL.
+- 5.570 municípios com z regional; média dos z = 0 em cada região intermediária.
+- Contagem de perfis somando 5.571 e payload do site com 5.738 linhas.
 
 Além disso, a soma dos municípios foi conferida contra os **arquivos oficiais do TSE para
-Brasil + 27 UFs + exterior, nos dois turnos (54 conferências): diferença zero** em todos os
-candidatos. E `node testes/teste_viewer.mjs` testa o drill-down (7 linhas iniciais, 5.738 ao
-expandir tudo, busca e recolher).
+Brasil + 27 UFs + exterior, nos dois turnos (54 conferências): diferença zero**.
 
 ## Limitações
 
-Tudo é agregado por município: o delta de votos **não** é transferência de voto entre turnos
-(falácia ecológica). O delta mistura migração de voto, variação de comparecimento e de
-brancos/nulos. Detalhes na seção 5 de [ANALISE.md](ANALISE.md).
+1. **Tudo é agregado.** O delta de votos de um município não é transferência de voto entre
+   eleitores (falácia ecológica); mistura migração, comparecimento e brancos/nulos.
+2. **z-score não é teste de fraude.** É só distância em desvios padrão da própria região.
+3. **Histórico usa 1º turno** para comparar 2018/2022/2026, porque é o único turno comum aos
+   três ciclos com o mesmo conjunto de candidatos.
+4. **2018 difere em 46 votos** do total publicado (voto em trânsito).
+5. **Sem 2014.** O recorte cobre 2018 + 2022 + 2026; 2014 mudaria a definição de polo
+   (PSDB no 2º turno) e ficou fora para não misturar séries.
 
-## Fonte
+## Deploy
 
-```
-https://resultados.tse.jus.br/oficial/comum/config/ele-c.json                     # catálogo de eleições
-https://resultados.tse.jus.br/oficial/ele2026/6257/config/mun-e006257-cm.json     # municípios
-https://resultados.tse.jus.br/oficial/ele2026/{6257|6258}/dados/{uf}/{uf}{cd}-c0001-e00{6257|6258}-u.json
-https://servicodados.ibge.gov.br/api/v1/localidades/estados/{id}/municipios       # malha do IBGE
-```
+O app é estático: publique a pasta `site/` (GitHub Pages, Netlify, Vercel). `site/dados.js` tem
+~2,9 MB (já versionado) e carrega por `<script>` — não precisa de servidor de API.
 
-Códigos de eleição: **6257** = Presidente 1º turno, **6258** = Presidente 2º turno.
-
-Esses endpoints do TSE não são documentados nem versionados. Para dados com contrato, o caminho
-é o Portal de Dados Abertos: <https://dadosabertos.tse.jus.br/dataset/resultados-2026>.
-
-Licença dos dados: CC-BY (Portal de Dados Abertos do TSE). Este repositório é análise
-independente, sem vínculo com o TSE.
+Licença dos dados: CC-BY (Portal de Dados Abertos do TSE). Análise independente, sem vínculo
+com o TSE.

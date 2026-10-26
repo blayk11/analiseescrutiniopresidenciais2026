@@ -31,7 +31,6 @@ RAIZ = Path(__file__).resolve().parent
 DB_VOTOS = RAIZ / "dados" / "votos_presidente_2026.db"
 DB_HIER = RAIZ / "dados" / "base_hierarquica.db"
 CSV_HIER = RAIZ / "saidas" / "base_hierarquica.csv"
-JS_HIER = RAIZ / "visualizacao" / "dados.js"
 CACHE_IBGE = RAIZ / "cache" / "ibge_municipios.json"
 
 IBGE = "https://servicodados.ibge.gov.br/api/v1/localidades"
@@ -51,7 +50,7 @@ CAMPOS_ABS = [
 ]
 
 COLUNAS = [
-    "esfera", "cod_ibge", "nome_localidade", "uf", "macrorregiao",
+    "esfera", "cod_ibge", "cd_municipio", "nome_localidade", "uf", "macrorregiao",
     "regiao_intermediaria", "cod_regiao_intermediaria",
 ] + CAMPOS_ABS + [
     "pct_comparecimento_1t", "pct_abstencao_1t", "pct_comparecimento_2t", "pct_abstencao_2t",
@@ -139,6 +138,17 @@ def agregar(itens: list[dict], esfera: str, **ident) -> dict:
     return {"esfera": esfera, **ident, **soma}
 
 
+# nomes das UFs (o TSE só dá a sigla; o nível ESTADO precisa do nome legível)
+UF_NOMES = {
+    "AC": "Acre", "AL": "Alagoas", "AM": "Amazonas", "AP": "Amapá", "BA": "Bahia",
+    "CE": "Ceará", "DF": "Distrito Federal", "ES": "Espírito Santo", "GO": "Goiás",
+    "MA": "Maranhão", "MG": "Minas Gerais", "MS": "Mato Grosso do Sul", "MT": "Mato Grosso",
+    "PA": "Pará", "PB": "Paraíba", "PE": "Pernambuco", "PI": "Piauí", "PR": "Paraná",
+    "RJ": "Rio de Janeiro", "RN": "Rio Grande do Norte", "RO": "Rondônia", "RR": "Roraima",
+    "RS": "Rio Grande do Sul", "SC": "Santa Catarina", "SE": "Sergipe", "SP": "São Paulo",
+    "TO": "Tocantins",
+}
+
 PREPOSICOES = {"de", "da", "do", "das", "dos", "e", "d'"}
 
 
@@ -210,6 +220,7 @@ def main() -> int:
         municipios.append({
             "esfera": "MUNICIPIO",
             "cod_ibge": str(v["cd_ibge"]),
+            "cd_municipio": cd,
             "nome_localidade": titulo(v["municipio"]),
             "uf": info["uf"] or uf.upper(),
             "macrorregiao": info["macrorregiao"],
@@ -238,7 +249,7 @@ def main() -> int:
     for m in municipios:
         por_uf.setdefault(m["uf"], []).append(m)
     ufs = [
-        agregar(v, "ESTADO", nome_localidade=uf, uf=uf,
+        agregar(v, "ESTADO", nome_localidade=UF_NOMES.get(uf, uf), uf=uf,
                 macrorregiao=v[0]["macrorregiao"], regiao_intermediaria="",
                 cod_regiao_intermediaria="", cod_ibge="")
         for uf, v in por_uf.items()
@@ -288,8 +299,8 @@ def main() -> int:
         DB_HIER.unlink()
     con = sqlite3.connect(DB_HIER)
     tipos = {c: ("REAL" if c.startswith("pct_") else
-                 "TEXT" if c in ("esfera", "cod_ibge", "nome_localidade", "uf", "macrorregiao",
-                                 "regiao_intermediaria", "cod_regiao_intermediaria",
+                 "TEXT" if c in ("esfera", "cod_ibge", "cd_municipio", "nome_localidade", "uf",
+                                 "macrorregiao", "regiao_intermediaria", "cod_regiao_intermediaria",
                                  "vencedor_1t", "vencedor_2t", "houve_virada") else "INTEGER")
              for c in COLUNAS}
     con.execute("CREATE TABLE esferas (" + ", ".join(f"{c} {tipos[c]}" for c in COLUNAS) + ")")
@@ -302,26 +313,11 @@ def main() -> int:
     con.commit()
     con.close()
 
-    # ---- payload do viewer
-    JS_HIER.parent.mkdir(parents=True, exist_ok=True)
-    def celula(linha, col):
-        v = linha.get(col)
-        if isinstance(v, float):
-            return round(v, 2)
-        return v if v is not None else ""
-
-    payload = {"cols": COLUNAS, "rows": [[celula(l, c) for c in COLUNAS] for l in linhas]}
-    JS_HIER.write_text(
-        "window.HIER=" + json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + ";\n",
-        encoding="utf-8",
-    )
-
     contagem = {}
     for l in linhas:
         contagem[l["esfera"]] = contagem.get(l["esfera"], 0) + 1
     print(f"\nOK: {CSV_HIER}  ({len(linhas)} linhas)")
     print(f"OK: {DB_HIER}")
-    print(f"OK: {JS_HIER}")
     print("  " + " | ".join(f"{k}: {v}" for k, v in sorted(contagem.items())))
     print(f"\nBrasil: válidos 1ºT {pais['validos_1t']:,} | 2ºT {pais['validos_2t']:,} | "
           f"viradas {sum(1 for l in linhas if l['houve_virada'] == 'SIM')}")
