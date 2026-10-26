@@ -1,0 +1,10 @@
+# JSON brutos do TSE (11.514 arquivos, ~150 MB) — regeneráveis com extrair_presidente.py
+cache/
+
+# CSV/SQLite gerados (35 MB) — regeneráveis com os dois scripts
+dados/
+
+# logs e artefatos locais
+extracao.log
+__pycache__/
+*.pyc
