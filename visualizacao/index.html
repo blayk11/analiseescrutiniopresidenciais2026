@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Escrutínio Presidente 2026 — drill-down</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="titulo">
+    <h1>Escrutínio presidencial 2026</h1>
+    <p>Brasil → macrorregião → estado → região intermediária → município.
+       Clique na seta para abrir. Números absolutos e percentuais vêm da mesma base.</p>
+  </div>
+  <div class="controles">
+    <input id="busca" type="search" placeholder="Buscar município, UF ou região…" autocomplete="off">
+    <button id="btn-expandir" type="button">Expandir tudo</button>
+    <button id="btn-recolher" type="button">Recolher</button>
+    <span id="status" role="status"></span>
+  </div>
+</header>
+
+<main>
+  <table id="tabela">
+    <thead>
+      <tr>
+        <th class="col-nome">Localidade</th>
+        <th>Nível</th>
+        <th class="num">Eleitores</th>
+        <th class="num">Comp.</th>
+        <th class="num">Abst.</th>
+        <th class="num">Br.</th>
+        <th class="num">Nu.</th>
+        <th class="num lula-h">Lula 1ºT</th>
+        <th class="num lula-h">%</th>
+        <th class="num flavio-h">Flávio 1ºT</th>
+        <th class="num flavio-h">%</th>
+        <th class="num lula-h">Lula 2ºT</th>
+        <th class="num lula-h">%</th>
+        <th class="num flavio-h">Flávio 2ºT</th>
+        <th class="num flavio-h">%</th>
+        <th class="num">Peso</th>
+        <th>1º turno</th>
+        <th>2º turno</th>
+        <th>Virada</th>
+      </tr>
+    </thead>
+    <tbody id="corpo"></tbody>
+  </table>
+</main>
+
+<footer>
+  Fonte: <code>resultados.tse.jus.br</code> (1º e 2º turno) + malha de regiões do IBGE.
+  Comp./Abst. sobre eleitores aptos; Br./Nu. sobre comparecimento; % de candidato sobre válidos;
+  Peso = participação nos válidos do estado (município/região intermediária) ou do Brasil (UF/macrorregião).
+</footer>
+
+<script src="dados.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
