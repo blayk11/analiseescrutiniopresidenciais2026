@@ -390,10 +390,19 @@
   }
 
   function secaoHistorico(d) {
+    // Calcular percentuais do Polo B (PSL 2018 / PL 2022) via margem e PT
+    const poloB_2018 = (d.pct_pt_2018 !== undefined && d.pct_pt_2018 !== null && d.margem_2018 !== undefined && d.margem_2018 !== null)
+      ? (d.vencedor_2018 === 'B' ? d.pct_pt_2018 + d.margem_2018 : Math.max(0, d.pct_pt_2018 - d.margem_2018))
+      : null;
+    const poloB_2022 = (d.pct_pt_2022 !== undefined && d.pct_pt_2022 !== null && d.margem_2022 !== undefined && d.margem_2022 !== null)
+      ? (d.vencedor_2022 === 'B' ? d.pct_pt_2022 + d.margem_2022 : Math.max(0, d.pct_pt_2022 - d.margem_2022))
+      : null;
+
     const linhas = [
-      ['2018', d.pct_pt_2018, d.pct_polo_b_2018, d.margem_2018, d.vencedor_2018],
-      ['2022', d.pct_pt_2022, d.pct_polo_b_2022, d.margem_2022, d.vencedor_2022],
+      ['2018 (1ºT)', d.pct_pt_2018, poloB_2018, d.margem_2018, d.vencedor_2018],
+      ['2022 (1ºT)', d.pct_pt_2022, poloB_2022, d.margem_2022, d.vencedor_2022],
       ['2026 (1ºT)', d.pct_lula_1t, d.pct_flavio_1t, d.margem_2026, d.vencedor_2026],
+      ['2026 (2ºT)', d.pct_lula_2t, d.pct_flavio_2t, Math.abs((d.pct_lula_2t || 0) - (d.pct_flavio_2t || 0)), d.pct_lula_2t >= d.pct_flavio_2t ? 'A' : 'B'],
     ];
     const corpo = linhas.map(([ano, a, b, m, v]) => `
       <tr>
@@ -410,7 +419,7 @@
       <div class="bloco">
         <h3>Histórico presidencial (1º turno)</h3>
         <table class="hist">
-          <thead><tr><th>Ciclo</th><th>Polo A (PT)</th><th>Polo B</th><th>Margem</th><th>Venceu</th></tr></thead>
+          <thead><tr><th>Eleição</th><th>Polo A (PT)</th><th>Polo B (Bolsonaro)</th><th>Margem</th><th>Vencedor</th></tr></thead>
           <tbody>${corpo}</tbody>
         </table>
         ${semHist}
@@ -541,7 +550,18 @@
       </div>
 
       <div class="bloco">
-        <h3>2. O que significam os termos e números</h3>
+        <h3>2. Por que o vencedor ganhou ~74% dos novos votos no 2º turno?</h3>
+        <p class="paragrafo">
+          À primeira vista, pode parecer contraintuitivo que quase 3 em cada 4 votos novos no 2º turno tenham ido para Lula. A matemática e o histórico eleitoral brasileiro explicam isso por 3 razões:<br>
+          • <b>Teto do adversário:</b> Flávio Bolsonaro já atingiu 56,1 milhões de votos no 1º turno (sua base mais fiel e mobilizada). No 2º turno, cresceu +3,7 mi.<br>
+          • <b>Rejeição ao bolsonarismo no eleitorado de terceiros:</b> Os candidatos de centro e terceira via (Cury, Renan, Caiado) somaram 9,3 milhões de votos. Grande parte desse público tinha alta rejeição ao Polo B e migrou para Lula no 2º turno.<br>
+          • <b>Aumento de votantes válidos (+4,7 milhões):</b> Milhões de pessoas que votaram em branco, nulo ou faltaram no 1º turno compareceram no 2º turno, especialmente nas capitais e periferias do Sudeste e Sul, gerando a virada matemática.<br>
+          <i>Precedente:</i> Em 2006, Lula ganhou 11,6 milhões de votos novos no 2º turno, enquanto Alckmin perdeu 2,4 milhões (Lula absorveu mais de 100% do saldo de crescimento).
+        </p>
+      </div>
+
+      <div class="bloco">
+        <h3>3. O que significam os termos e números</h3>
         <p class="paragrafo">
           • <b>Barra colorida nos cards:</b> Vermelho = Lula | Azul = Flávio Bolsonaro | Cinza claro = Votos Brancos | Cinza escuro = Votos Nulos.<br>
           • <b>VIRADA / NÃO VIROU:</b> Indica se o candidato que venceu no 1º turno perdeu no 2º turno naquela localidade.<br>
@@ -552,7 +572,7 @@
       </div>
 
       <div class="bloco">
-        <h3>3. Perfil Histórico e Estatística (z-score)</h3>
+        <h3>4. Perfil Histórico (2018, 2022 e 2026) e Estatística</h3>
         <p class="paragrafo">
           • <b>Polo A (PT) / Polo B (PL/PSL):</b> Compara o comportamento histórico nos últimos 3 ciclos presidenciais (2018, 2022 e 2026).<br>
           • <b>Consistente:</b> Cidade onde o mesmo polo venceu todas as 3 eleições com folga (>10 p.p.).<br>
