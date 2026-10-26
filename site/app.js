@@ -61,6 +61,7 @@
     sheetNivel: document.getElementById('sheet-nivel'),
     sheetCorpo: document.getElementById('sheet-corpo'),
     fechar: document.getElementById('fechar'),
+    infoBtn: document.getElementById('info-btn'),
   };
 
   // atalho: em um estado, ver todos os municípios sem passar pelas regiões
@@ -496,6 +497,66 @@
       </div>`;
   }
 
+  
+  function guiaHTML() {
+    return `
+      <div class="bloco">
+        <h3>Guia Rápido: Como entender este aplicativo</h3>
+        <p class="paragrafo">
+          Este painel reúne e audita 100% dos dados oficiais da apuração para Presidente em 2026 (TSE)
+          comparados aos ciclos de 2018 e 2022. Você pode navegar do Brasil até qualquer município.
+        </p>
+      </div>
+
+      <div class="bloco">
+        <h3>1. Navegação em Níveis (Drill-down)</h3>
+        <p class="paragrafo">
+          • <b>Hierarquia:</b> Começa no <b>Brasil</b> → clique em uma <b>Macrorregião</b> (ex: Sudeste) → escolha o <b>Estado</b> → veja as <b>Regiões Intermediárias</b> ou use o atalho <i>"Ver todos os municípios"</i>.<br>
+          • <b>Migalhas (topo):</b> Toque em qualquer botão na linha superior para voltar diretamente àquele nível.<br>
+          • <b>Busca:</b> Digite o nome de qualquer cidade, sigla de estado ou região para ir direto a ela.
+        </p>
+      </div>
+
+      <div class="bloco">
+        <h3>2. O que significam os termos e números</h3>
+        <p class="paragrafo">
+          • <b>Barra colorida nos cards:</b> Vermelho = Lula | Azul = Flávio Bolsonaro | Cinza claro = Votos Brancos | Cinza escuro = Votos Nulos.<br>
+          • <b>VIRADA / NÃO VIROU:</b> Indica se o candidato que venceu no 1º turno perdeu no 2º turno naquela localidade.<br>
+          • <b>p.p. (Pontos Percentuais):</b> É a diferença direta entre duas porcentagens. Exemplo: subir de 45% para 50% é um ganho de +5 p.p.<br>
+          • <b>Swing (Balanço entre eleições):</b> Mudança percentual no voto de um polo político de uma eleição para a outra (ex: de 2022 para 2026).<br>
+          • <b>Decomposição contábil (ΔW = ΔV − P − ΔL):</b> Mostra com precisão matemática de onde veio o ganho do vencedor: quanto veio do crescimento total de votantes válidos, quanto veio de eleitores de terceiros candidatos e quanto veio de perda direta de votos do adversário.
+        </p>
+      </div>
+
+      <div class="bloco">
+        <h3>3. Perfil Histórico e Estatística (z-score)</h3>
+        <p class="paragrafo">
+          • <b>Polo A (PT) / Polo B (PL/PSL):</b> Compara o comportamento histórico nos últimos 3 ciclos presidenciais (2018, 2022 e 2026).<br>
+          • <b>Consistente:</b> Cidade onde o mesmo polo venceu todas as 3 eleições com folga (>10 p.p.).<br>
+          • <b>Pêndulo:</b> Cidades que alternaram o polo vencedor entre os anos.<br>
+          • <b>z-score (Desvio relativo à região):</b> Mede se a variação da cidade fugiu do padrão das cidades vizinhas da mesma região geográfica. <i>Não é teste de fraude nem acusação</i>, apenas um termômetro estatístico (|z| ≤ 1,5 é o padrão esperado; > 2,5 é um ponto fora da curva).
+        </p>
+      </div>
+
+      <div class="bloco">
+        <div class="nota">
+          <b>Transparência total:</b> Todos os números são calculados diretamente das bases oficiais do TSE e IBGE por rotinas públicas e auditáveis. Nenhum valor é editado à mão.
+        </div>
+      </div>
+    `;
+  }
+
+  function abrirGuia() {
+    el.sheetTitulo.textContent = 'Como entender as informações';
+    el.sheetNivel.textContent = 'Guia & Instruções de Uso';
+    el.sheetCorpo.innerHTML = guiaHTML();
+    el.sheetCorpo.scrollTop = 0;
+    el.fundo.hidden = false;
+    el.sheet.hidden = false;
+    requestAnimationFrame(() => el.sheet.classList.add('aberto'));
+    document.body.style.overflow = 'hidden';
+  }
+
   function abrirSheet(i) {
     const d = D[i];
     el.sheetTitulo.textContent = d.nome_localidade;
@@ -516,6 +577,7 @@
   }
 
   el.fechar.addEventListener('click', fecharSheet);
+  if (el.infoBtn) el.infoBtn.addEventListener('click', abrirGuia);
   el.fundo.addEventListener('click', fecharSheet);
   document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') fecharSheet(); });
 

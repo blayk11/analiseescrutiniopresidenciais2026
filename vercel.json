@@ -1,1 +1,4 @@
-{}
+{
+  "outputDirectory": "site",
+  "cleanUrls": true
+}

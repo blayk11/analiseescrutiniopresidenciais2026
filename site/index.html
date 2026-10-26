@@ -4,16 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#10151c">
-<title>Escrutínio 2026 — drill-down</title>
+<title>Escrutínio 2026 — Apuração Presidencial & Análise Estatística</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <header class="topo">
   <div class="barra">
-    <button id="voltar" class="icone" type="button" aria-label="Voltar um nível" disabled>←</button>
+    <button id="voltar" class="icone" type="button" aria-label="Voltar um nível" disabled title="Voltar um nível">←</button>
     <h1>Escrutínio 2026</h1>
-    <button id="limpar" class="icone" type="button" aria-label="Ir para o Brasil">⤒</button>
+    <button id="info-btn" class="icone" type="button" aria-label="Como entender as informações" title="Como entender as informações (Guia Rápido)">ℹ️</button>
+    <button id="limpar" class="icone" type="button" aria-label="Ir para o início (Brasil)" title="Ir para o início (Brasil)">⤒</button>
   </div>
   <nav id="migalhas" class="migalhas" aria-label="Nível de navegação"></nav>
   <div class="busca-linha">
@@ -27,8 +28,8 @@
   <div id="hero" class="hero"></div>
   <div id="trilho" class="trilho"></div>
   <p class="rodape">
-    Fonte: TSE (resultados 2026, dados abertos 2018/2022) e malha do IBGE.
-    Números calculados por <code>estatistica.py</code>; nenhum valor é editado à mão.
+    Fonte: TSE (resultados oficiais 2026, dados abertos 2018/2022) e malha do IBGE.<br>
+    Cálculos automatizados e auditados via <code>estatistica.py</code>; nenhum número é editado manualmente.
   </p>
 </main>
 
